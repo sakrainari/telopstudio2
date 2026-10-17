@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#262624" media="(prefers-color-scheme: dark)">
-<title>Telop Studio 2 Ver2.4.0</title>
+<title>Telop Studio 2 Ver2.5.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@900&family=M+PLUS+Rounded+1c:wght@800&family=Dela+Gothic+One&family=RocknRoll+One&family=Zen+Maru+Gothic:wght@900&family=Shippori+Mincho+B1:wght@800&display=swap" rel="stylesheet">
@@ -57,16 +57,16 @@
         <button type="button" data-bg="dark" aria-pressed="false">暗い</button>
         <button type="button" data-bg="light" aria-pressed="false">明るい</button>
       </div>
-      <label class="tool">ガイド
-        <select id="guidePreset">
+      <label class="tool"><span class="tool-label">ガイド</span>
+        <select id="guidePreset" aria-label="ガイド">
           <option value="youtube">YouTubeショート</option>
           <option value="tiktok">TikTok</option>
           <option value="reels">リール</option>
           <option value="off">表示しない</option>
         </select>
       </label>
-      <label class="tool">機種
-        <select id="devicePreset">
+      <label class="tool"><span class="tool-label">機種</span>
+        <select id="devicePreset" aria-label="機種">
           <option value="video">動画の枠（9:16）</option>
           <option value="pixel8pro">Pixel 8 Pro</option>
           <option value="pixel8">Pixel 8</option>
@@ -79,7 +79,7 @@
         <option value="width">横幅に合わせる</option>
         <option value="fill">画面を埋める（左右が切れる）</option>
       </select>
-      <button type="button" id="referenceOpen">実画面を重ねる</button>
+      <button type="button" id="referenceOpen" title="スマホのスクリーンショットを重ねて確認">実画面を重ねる</button>
       <input type="file" id="referenceFile" accept="image/png,image/jpeg,image/webp" hidden>
       <div class="zoom" role="group" aria-label="プレビューの拡大">
         <button type="button" id="zoomOut" aria-label="縮小">−</button>
@@ -99,6 +99,9 @@
     </div>
     <p id="stageInfo" class="stage-info" aria-live="polite"></p>
 
+  </section>
+
+  <section class="pane editor-pane" aria-label="入力">
     <div class="editor">
       <div class="editor-head">
         <label for="speaker">話者</label>

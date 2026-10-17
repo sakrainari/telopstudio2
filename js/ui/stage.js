@@ -60,7 +60,7 @@ function fitHeight() {
   const area = $("stageArea");
   const style = getComputedStyle(area);
   const inner = area.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-  return Math.min(inner, window.innerHeight * 0.72);
+  return inner;
 }
 
 // Keep the point under `focus` (client coordinates) in place while zooming; default is the caption.

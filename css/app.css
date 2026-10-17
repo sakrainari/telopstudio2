@@ -87,12 +87,24 @@ h2, h3 { margin: 0; font-family: var(--head); font-size: 16px; font-weight: 800;
 .menu-body button:hover { background: var(--sunk); }
 
 /* ---------- workspace ---------- */
-.workspace { display: grid; grid-template-columns: 290px minmax(0, 1fr) 350px; height: calc(100vh - 58px); }
+/* Layout switches with the window width:
+   standard (1100-1359): preview above the editor, design on the right
+   medium   (1360-1679): preview | editor | design side by side
+   wide     (1680+)    : preview | editor above design (font list beside the settings) */
+.workspace { display: grid; height: calc(100vh - 58px);
+  grid-template-columns: 270px minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "list stage style" "list editor style"; }
+.list-pane { grid-area: list; }
+.stage-pane { grid-area: stage; }
+.editor-pane { grid-area: editor; }
+.style-pane { grid-area: style; }
+.editor-pane { padding-top: 0; }
 .pane { overflow: auto; padding: 16px; }
 .list-pane { border-right: 1px solid var(--line); background: var(--pane); }
 .style-pane { border-left: 1px solid var(--line); background: var(--pane); }
 .pane-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .list-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.list-actions button { padding: 6px 4px; white-space: nowrap; font-size: 13px; }
 
 /* caption list */
 .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -120,7 +132,7 @@ h2, h3 { margin: 0; font-family: var(--head); font-size: 16px; font-weight: 800;
 .stage-area { flex: 1 1 0; min-height: 360px; display: flex; overflow: auto; padding: 8px; border-radius: 12px; }
 .stage-area.zoomed { background: var(--sunk); }
 /* The device is the visible screen; the stage inside it is always the 1080x1920 video frame. */
-.device { position: relative; margin: auto; flex-shrink: 0; height: min(100%, 72vh); aspect-ratio: var(--screen, 9 / 16); max-width: 100%; border-radius: 18px; overflow: hidden; background: #0d0d0c; box-shadow: 0 0 0 6px var(--sunk), 0 0 0 7px var(--line), 0 18px 40px #2b292426; }
+.device { position: relative; margin: auto; flex-shrink: 0; height: 100%; aspect-ratio: var(--screen, 9 / 16); max-width: 100%; border-radius: 18px; overflow: hidden; background: #0d0d0c; box-shadow: 0 0 0 6px var(--sunk), 0 0 0 7px var(--line), 0 18px 40px #2b292426; }
 .device.phone { border-radius: 30px; box-shadow: 0 0 0 9px #161513, 0 0 0 10px #4a4740, 0 22px 48px #2b292440; }
 .device.phone::after { content: ""; position: absolute; z-index: 5; top: 1.6%; left: 50%; width: 3.2%; aspect-ratio: 1; border-radius: 50%; background: #050505; box-shadow: 0 0 0 2px #1b1a18; transform: translateX(-50%); pointer-events: none; }
 .device.phone.notch::after { width: 30%; aspect-ratio: auto; height: 3%; top: 1.2%; border-radius: 999px; }
@@ -221,13 +233,38 @@ input[type=color] { width: 44px; height: 30px; padding: 2px; border: 1px solid v
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.error { background: var(--danger); color: #fff; }
 
+@media (min-width: 1360px) {
+  .workspace { grid-template-columns: 260px minmax(320px, 1fr) minmax(300px, 380px) 330px; grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "list stage editor style"; }
+  .workspace { grid-template-columns: 240px minmax(300px, 1fr) minmax(300px, 360px) 320px; }
+  .editor-pane { padding-top: 16px; }
+  /* Compact preview toolbar so the phone keeps its height. */
+  .stage-tools { gap: 6px; }
+  .stage-tools .tool-label { display: none; }
+  .stage-tools button, .stage-tools select { font-size: 12px; padding: 4px 8px; }
+  .zoom button { min-width: 30px; }
+}
+@media (min-width: 1680px) {
+  .workspace { grid-template-columns: 270px minmax(380px, 0.8fr) minmax(620px, 1.2fr); grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "list stage editor" "list stage style"; }
+  .workspace { grid-template-columns: 270px minmax(380px, 0.8fr) minmax(620px, 1.2fr); }
+  .stage-tools .tool-label { display: inline; }
+  .stage-tools button, .stage-tools select { font-size: 13px; padding: 6px 11px; }
+  .editor-pane { padding: 16px 16px 0 0; }
+  .style-pane { border-left: 0; background: transparent; padding: 12px 16px 16px 0; }
+  .scope, #scopeHint { max-width: 560px; }
+  /* Fonts as a narrow column beside the other settings. */
+  #styleForm { display: grid; grid-template-columns: minmax(200px, 240px) minmax(0, 1fr); gap: 10px; align-items: start; }
+  #styleForm > .section { margin-top: 0; grid-column: 2; }
+  #styleForm > [data-section="font"] { grid-column: 1; grid-row: 1 / span 20; position: sticky; top: 0; }
+  #styleForm > [data-section="font"] .font-list { max-height: 52vh; }
+}
 @media (max-width: 1100px) {
-  .workspace { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - 58px); }
+  .workspace { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; min-height: calc(100vh - 58px);
+    grid-template-areas: "stage" "editor" "list" "style"; }
   .list-pane, .style-pane { border: 0; border-bottom: 1px solid var(--line); }
-  .list-pane { order: 2; max-height: 50vh; }
-  .stage-pane { order: 1; }
-  .style-pane { order: 3; }
-  .stage { height: 70vh; }
+  .list-pane { max-height: 50vh; }
+  .stage-area { height: 70vh; flex: none; }
   .bar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
   .project select { max-width: 150px; }
   .save-state { display: none; }

@@ -263,9 +263,11 @@ test("16: プレビューを拡大でき、拡大中もドラッグ位置が正�
   const before = (await project(page)).speakers["!"].pos.y;
   const box = await page.locator("#caption").boundingBox();
   const step = zoomed / 100;
-  await page.mouse.move(box.x + 20, box.y + 20);
+  const cx = box.x + box.width / 2,
+    cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
   await page.mouse.down();
-  await page.mouse.move(box.x + 20, box.y + 20 + step * 5, { steps: 4 });
+  await page.mouse.move(cx, cy + step * 5, { steps: 4 });
   await page.mouse.up();
   const after = (await project(page)).speakers["!"].pos.y;
   assert(Math.abs(after - before - 5) < 0.3, `ドラッグ量がずれています（${(after - before).toFixed(2)}%）`);
