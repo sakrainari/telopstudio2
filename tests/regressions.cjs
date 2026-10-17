@@ -250,6 +250,29 @@ test("15: 「選んだ文字」から「話者全体」に戻すと、そのま�
   assert((await page.locator("#selectionLabel").textContent()) === "", "選択表示が残っています");
 });
 
+test("16: プレビューを拡大でき、拡大中もドラッグ位置が正しい", async ({ page }) => {
+  const fit = await page.locator("#stage").evaluate((el) => el.clientHeight);
+  await page.locator("#zoomIn").click();
+  await page.locator("#zoomIn").click();
+  const zoomed = await page.locator("#stage").evaluate((el) => el.clientHeight);
+  assert(Math.abs(zoomed / fit - 2.25) < 0.05, `拡大率が${(zoomed / fit).toFixed(2)}倍です`);
+  assert((await page.locator("#zoomFit").textContent()) === "225%", "倍率の表示が違います");
+  const scrollable = await page.locator("#stageArea").evaluate((el) => el.scrollHeight > el.clientHeight);
+  assert(scrollable, "拡大中にスクロールできません");
+  // Moving by 1% of the frame height must still be 1% while zoomed.
+  const before = (await project(page)).speakers["!"].pos.y;
+  const box = await page.locator("#caption").boundingBox();
+  const step = zoomed / 100;
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 20, box.y + 20 + step * 5, { steps: 4 });
+  await page.mouse.up();
+  const after = (await project(page)).speakers["!"].pos.y;
+  assert(Math.abs(after - before - 5) < 0.3, `ドラッグ量がずれています（${(after - before).toFixed(2)}%）`);
+  await page.locator("#zoomFit").click();
+  assert((await page.locator("#stage").evaluate((el) => el.clientHeight)) === fit, "全体表示に戻りません");
+});
+
 (async () => {
   const server = await serve();
   const base = `http://127.0.0.1:${server.address().port}/`;

@@ -38,6 +38,71 @@ function saveView() {
 
 const stageScale = () => $("stage").clientWidth / FRAME.width;
 
+// ---------- zoom ----------
+// 1 = fit the whole frame. Above 1 the stage grows and the area scrolls.
+const ZOOM_MIN = 1,
+  ZOOM_MAX = 5;
+let zoom = 1;
+
+function fitHeight() {
+  const area = $("stageArea");
+  const style = getComputedStyle(area);
+  const inner = area.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+  return Math.min(inner, window.innerHeight * 0.72);
+}
+
+// Keep the point under `focus` (client coordinates) in place while zooming; default is the caption.
+function setZoom(next, focus) {
+  const area = $("stageArea"),
+    stage = $("stage");
+  const value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(next * 100) / 100));
+  const before = stage.getBoundingClientRect();
+  let fx, fy;
+  if (focus) {
+    fx = (focus.x - before.left) / before.width;
+    fy = (focus.y - before.top) / before.height;
+  } else {
+    const c = $("caption").getBoundingClientRect();
+    fx = c.width ? (c.left + c.width / 2 - before.left) / before.width : 0.5;
+    fy = c.height ? (c.top + c.height / 2 - before.top) / before.height : 0.5;
+  }
+  zoom = value;
+  const zoomed = zoom > 1;
+  stage.classList.toggle("zoomed", zoomed);
+  area.classList.toggle("zoomed", zoomed);
+  stage.style.height = zoomed ? `${fitHeight() * zoom}px` : "";
+  $("zoomFit").textContent = zoomed ? `${Math.round(zoom * 100)}%` : "全体";
+  $("zoomOut").disabled = zoom <= ZOOM_MIN;
+  $("zoomIn").disabled = zoom >= ZOOM_MAX;
+  place();
+  if (zoomed) {
+    const after = stage.getBoundingClientRect(),
+      areaBox = area.getBoundingClientRect();
+    const targetX = focus ? focus.x - areaBox.left : area.clientWidth / 2,
+      targetY = focus ? focus.y - areaBox.top : area.clientHeight / 2;
+    area.scrollLeft += after.left + fx * after.width - areaBox.left - targetX;
+    area.scrollTop += after.top + fy * after.height - areaBox.top - targetY;
+  }
+}
+
+function initZoom() {
+  $("zoomIn").onclick = () => setZoom(zoom * 1.5);
+  $("zoomOut").onclick = () => setZoom(zoom / 1.5);
+  $("zoomFit").onclick = () => setZoom(1);
+  // Ctrl (or ⌘) + wheel zooms around the pointer; a pinch on a trackpad arrives the same way.
+  $("stageArea").addEventListener(
+    "wheel",
+    (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom(zoom * Math.exp(-e.deltaY * 0.0025), { x: e.clientX, y: e.clientY });
+    },
+    { passive: false },
+  );
+  window.addEventListener("resize", () => zoom > 1 && setZoom(zoom));
+  setZoom(1);
+}
+
 function applyView() {
   const stage = $("stage");
   stage.className = `stage bg-${view.bg}`;
@@ -317,6 +382,7 @@ export function initStage() {
   loadView();
   applyView();
   initDrag();
+  initZoom();
   for (const b of document.querySelectorAll("[data-bg]"))
     b.onclick = () => {
       view.bg = b.dataset.bg;
