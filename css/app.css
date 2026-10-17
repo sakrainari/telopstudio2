@@ -260,13 +260,21 @@ input[type=color] { width: 44px; height: 30px; padding: 2px; border: 1px solid v
   #styleForm > [data-section="font"] .font-list { max-height: 52vh; }
 }
 @media (max-width: 1100px) {
+  /* Phones: a compact preview stays pinned at the top while the editor and design scroll beneath it. */
   .workspace { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; min-height: calc(100vh - 58px);
-    grid-template-areas: "stage" "editor" "list" "style"; }
+    grid-template-areas: "stage" "editor" "style" "list"; }
+  .stage-pane { position: sticky; top: 0; z-index: 10; padding: 8px 12px; gap: 6px; border-bottom: 1px solid var(--line); box-shadow: 0 6px 16px #2b29241a; }
+  .stage-tools { gap: 6px; }
+  .stage-tools .tool-label { display: none; }
+  .stage-tools button, .stage-tools select { font-size: 12px; padding: 3px 7px; }
+  .stage-area { height: 36vh; min-height: 220px; flex: none; padding: 4px; }
+  .stage-info { font-size: 11px; }
+  .editor-pane { padding-top: 12px; }
   .list-pane, .style-pane { border: 0; border-bottom: 1px solid var(--line); }
-  .list-pane { max-height: 50vh; }
-  .stage-area { height: 70vh; flex: none; }
+  .list-pane { max-height: none; }
   .bar { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
   .project select { max-width: 150px; }
   .save-state { display: none; }
+  .save-state.failed { display: inline; }
 }
 @media (prefers-reduced-motion: reduce) { .toast, button, .section > summary::before { transition: none; } }

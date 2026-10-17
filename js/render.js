@@ -133,6 +133,9 @@ export function renderCaption(row, speakers) {
   const margin = Math.ceil(outlineReach(style, fit) + shadowReach + 24 + style.size * 0.4);
   const w = blockWidth + padX * 2 + margin * 2,
     h = blockHeight + padY * 2 + margin * 2;
+  // Browsers fail (or the tab crashes) on huge canvases; stop with a message instead.
+  if (w > 8192 || h > 8192 || w * h > 32_000_000)
+    throw Error("テロップが長すぎて画像にできません。「カーソル位置で分ける」で分けてください。");
   const out = canvas(w, h),
     ctx = out.getContext("2d");
   const originX = margin + padX,

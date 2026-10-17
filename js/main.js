@@ -16,6 +16,8 @@ initStage();
 initStylePanel();
 emit("all");
 
+if (ui.oversize)
+  toast(`${ui.oversize}枚のテロップが2000文字を超えています。文章はそのまま残しているので、「カーソル位置で分ける」で分けてください。`, true);
 if (ui.storageError)
   toast("保存データを読み込めませんでした。上書きしないよう自動保存を止めています。JSONで保存してから再読み込みしてください。", true);
 

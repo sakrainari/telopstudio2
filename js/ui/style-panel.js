@@ -163,7 +163,7 @@ function carryHTML() {
     <label class="check"><input type="checkbox" data-keep-font checked>フォントは今のまま</label>
     <p class="hint">配色とフチ・影・座布団だけを入れ替えます。位置と折り返しはそのままです。</p>
     <button type="button" data-save-set>今の5話者をマイセットに保存</button>
-    <div class="inline"><button type="button" data-copy-style>このテロップの見た目をコピー</button><button type="button" data-paste-style${styleClipboard ? "" : " disabled"}>貼り付け（${checked ? `チェックした${checked}枚` : "このテロップ"}）</button></div>
+    <div class="inline"><button type="button" data-copy-style>このテロップの見た目をコピー（位置以外）</button><button type="button" data-paste-style${styleClipboard ? "" : " disabled"}>貼り付け（${checked ? `チェックした${checked}枚` : "このテロップ"}）</button></div>
   </div>`;
 }
 
@@ -284,16 +284,22 @@ async function onClick(e) {
   }
   if (t.closest("[data-copy-style]")) {
     if (!r) return;
-    styleClipboard = clone(r.override);
-    styleClipboard.__speaker = r.speaker;
+    // The look as shown: speaker settings plus this caption's own changes. Position stays with each caption.
+    styleClipboard = clone(styleOf(r, project().speakers));
+    delete styleClipboard.pos;
     build();
-    return toast("このテロップの個別設定をコピーしました。");
+    return toast("このテロップの見た目（フォント・色・フチ・影・座布団・折り返し）をコピーしました。");
   }
   if (t.closest("[data-paste-style]")) {
     const p = project();
     const targets = ui.checked.size ? p.rows.filter((x) => ui.checked.has(x.id)) : r ? [r] : [];
-    const { __speaker, ...patch } = styleClipboard;
-    change("見た目を貼り付け", () => targets.forEach((x) => (x.override = clone(patch))));
+    change("見た目を貼り付け", () =>
+      targets.forEach((x) => {
+        const pos = x.override.pos;
+        x.override = clone(styleClipboard);
+        if (pos) x.override.pos = pos;
+      }),
+    );
     emit("all");
     return toast(`${targets.length}枚に貼り付けました。`);
   }

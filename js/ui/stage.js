@@ -1,7 +1,7 @@
 // Centre pane: the 9:16 stage (drag to place) and the single text editor.
 import { FRAME, SPEAKERS, clone, uid, setPath } from "../style.js";
 import {
-  project, row, rowIndex, ui, change, select, emit, on, undo, redo, LIMITS, breakHistoryMerge,
+  project, row, rowIndex, ui, change, select, emit, on, undo, redo, LIMITS, breakHistoryMerge, charCount, clearSelection,
 } from "../store.js";
 import { graphemes, graphemeIndex, updateText, applyMark, newRow, utf16Offset } from "../text.js";
 import { renderCaption, styleOf, captionCenter } from "../render.js";
@@ -390,7 +390,7 @@ function split() {
     p.rows.splice(p.rows.indexOf(r) + 1, 0, next);
     p.selected = next.id;
   });
-  ui.range = null;
+  clearSelection();
   emit("all");
   $("editor").focus();
   $("editor").setSelectionRange(0, 0);
@@ -401,7 +401,7 @@ function merge() {
     r = row(),
     next = p.rows[rowIndex() + 1];
   if (!r || !next) return;
-  if (graphemes(r.text + next.text).length > LIMITS.chars) return toast(`つなげると${LIMITS.chars}文字を超えます。`, true);
+  if (charCount(r.text + next.text) > LIMITS.chars) return toast(`つなげると${LIMITS.chars}文字を超えます。`, true);
   const caret = r.text.length;
   change("次のテロップとつなげる", () => {
     r.text += next.text;
@@ -409,7 +409,7 @@ function merge() {
     p.rows.splice(p.rows.indexOf(next), 1);
     ui.checked.delete(next.id);
   });
-  ui.range = null;
+  clearSelection();
   emit("all");
   $("editor").focus();
   $("editor").setSelectionRange(caret, caret);
@@ -474,8 +474,15 @@ export function initStage() {
   $("editor").addEventListener("input", () => {
     const r = row();
     if (!r) return;
-    const value = $("editor").value;
-    if (graphemes(value).length > LIMITS.chars) return;
+    const el = $("editor"),
+      value = el.value;
+    if (charCount(value) > LIMITS.chars) {
+      // Keep what is saved and what is shown identical; never silently drop the extra text.
+      const caret = Math.min(el.selectionStart, r.text.length);
+      el.value = r.text;
+      el.setSelectionRange(caret, caret);
+      return toast(`1枚${LIMITS.chars}文字までです。長い文は「カーソル位置で分ける」で2枚にしてください。`, true);
+    }
     change("文字を編集", () => updateText(r, value), `text:${r.id}`);
     readSelection();
   });

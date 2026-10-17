@@ -32,7 +32,12 @@ function syncHistory() {
   $("undo").title = h.canUndo ? `元に戻す：${h.items[h.cursor].name}（Ctrl+Z）` : "元に戻す（Ctrl+Z）";
 }
 
+let lastSave = "saved";
 function syncSave() {
+  // A failed save is announced once even where the status text is hidden (small screens).
+  if (saveState === "failed" && lastSave !== "failed")
+    toast("ブラウザに保存できませんでした（容量不足など）。プロジェクトメニューの「JSONで保存」で控えを取ってください。", true);
+  lastSave = saveState;
   const el = $("saveState");
   el.textContent = ui.storageError
     ? "保存データを読めないため自動保存を止めています"
@@ -136,10 +141,12 @@ export function initTopbar() {
     if (file.size > 200 * 1024 * 1024 && !confirm("200MBを超える大きなJSONです。読み込みに時間がかかります。続けますか？")) return;
     try {
       const result = importLibrary(JSON.parse(await file.text()));
+      const note = result.oversize ? `（${result.oversize}枚が2000文字を超えています。文章はそのまま残しました）` : "";
       toast(
-        result.legacy
+        (result.legacy
           ? "旧Telop StudioのJSONを読み込みました。自動折り返しと位置はTelop Studio 2の標準になっています。"
-          : "JSONを読み込みました。",
+          : "JSONを読み込みました。") + note,
+        Boolean(result.oversize),
       );
     } catch (e) {
       toast("読み込めません：" + e.message, true);

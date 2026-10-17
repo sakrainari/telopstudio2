@@ -1,6 +1,6 @@
 // Left pane: choose, check, reorder and add captions.
 import { SPEAKERS, clone, uid } from "../style.js";
-import { project, ui, change, select, emit, on, LIMITS } from "../store.js";
+import { project, ui, change, select, emit, on, LIMITS, charCount, clearSelection } from "../store.js";
 import { newRow, parseScript } from "../text.js";
 import { renderCaption, crop } from "../render.js";
 import { $, escapeHTML, toast } from "./common.js";
@@ -113,7 +113,7 @@ function addRows(rows) {
     p.rows.splice(at + 1, 0, ...rows);
     p.selected = rows[0].id;
   });
-  ui.range = null;
+  clearSelection();
   emit("all");
   return true;
 }
@@ -142,7 +142,7 @@ function act(action, id) {
     if (to < 0 || to >= p.rows.length) return;
     change("テロップを移動", () => ([p.rows[index], p.rows[to]] = [p.rows[to], p.rows[index]]));
   }
-  ui.range = null;
+  clearSelection();
   emit("all");
 }
 
@@ -189,7 +189,7 @@ export function initList() {
   $("scriptAdd").onclick = () => {
     const rows = parseScript($("scriptText").value);
     if (!rows.length) return toast("台本を入力してください。");
-    if (rows.some((r) => r.text.length > LIMITS.chars)) return toast(`1枚${LIMITS.chars}文字以内にしてください。`, true);
+    if (rows.some((r) => charCount(r.text) > LIMITS.chars)) return toast(`1枚${LIMITS.chars}文字以内にしてください。`, true);
     if (addRows(rows)) {
       $("scriptDialog").close();
       toast(`${rows.length}枚を追加しました。`);

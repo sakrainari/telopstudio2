@@ -354,6 +354,83 @@ test("19: PCのフォントを一覧から選ぶと、追加されてすぐ使�
   assert((await page.locator('#styleForm [data-font="DejaVu Sans"]').count()) === 1, "フォント一覧に追加されていません");
 });
 
+test("20: 文字数は見た目の文字で数え、絵文字のテロップも保存・読込・結合で食い違わない", async ({ page }) => {
+  const emoji = "😀".repeat(1200); // 1200 visible characters, 2400 in JavaScript string length
+  // Heavy redraws run after the call returns, so the test tool never waits on a busy page.
+  const later = (fn, arg) => page.evaluate(([code, a]) => setTimeout(() => new Function("a", code)(a), 0), [fn, arg]);
+  await page.evaluate(() => import("./js/store.js").then((m) => (window.__store = m)));
+  await page.evaluate(() => import("./js/text.js").then((m) => (window.__text = m)));
+  // A caption of 1200 emoji is within the limit: it must survive a save + reload.
+  await later(`const s = window.__store; s.change("絵文字", (p) => { const r = p.rows.find((x) => x.id === p.selected); r.text = a; r.marks = Array(1200).fill(null); }); s.saveNow();`, emoji);
+  await page.waitForTimeout(1500);
+  await page.reload();
+  await page.waitForSelector("#rows .row-item");
+  await page.waitForTimeout(1500);
+  const state = await page.evaluate(() => import("./js/store.js").then((m) => ({ error: m.ui.storageError, len: m.row().text.length })));
+  assert(!state.error && state.len === 2400, "絵文字1200個のテロップを再読み込みできません");
+  assert((await page.locator("#stageInfo").textContent()).includes("長すぎて"), "長すぎるテロップの案内が出ません");
+  // Joining two 1200-emoji captions would make 2400 visible characters: refused before anything changes.
+  await page.evaluate(() => import("./js/store.js").then((m) => (window.__store = m)));
+  await page.evaluate(() => import("./js/text.js").then((m) => (window.__text = m)));
+  await later(`const s = window.__store; s.change("2枚目", (p) => p.rows.splice(p.rows.findIndex((r) => r.id === p.selected) + 1, 0, window.__text.newRow(a, "A"))); s.emit("all");`, emoji);
+  await page.waitForTimeout(1500);
+  const before = await page.locator("#rows .row-item").count();
+  await page.locator("#mergeRow").click();
+  assert((await page.locator("#rows .row-item").count()) === before, "上限を超える結合が実行されました");
+  assert((await page.locator("#toast").textContent()).includes("2000文字"), "結合できない理由が表示されません");
+  // Data already over the limit (e.g. from an older version) loads with the text intact and others unaffected.
+  const over = await page.evaluate(() => {
+    const store = window.__store;
+    const data = JSON.parse(store.exportProjectJSON());
+    data.projects[0].rows[0].text = "あ".repeat(2100);
+    data.projects[0].rows[0].marks = [];
+    const result = store.readLibrary(data);
+    return { oversize: result.oversize, kept: result.projects[0].rows[0].text.length, rows: result.projects[0].rows.length };
+  });
+  assert(over.oversize === 1 && over.kept === 2100 && over.rows === 6, "上限超えのデータで読み込みが失敗、または文章が切られました");
+});
+
+test("21: 「見た目をコピー」は話者の色・フォントも含めて貼り付け、位置は貼り付け先のまま", async ({ page }) => {
+  // Row 2 is speaker A (white, Noto Sans JP); row 3 is speaker B (yellow, RocknRoll One).
+  await page.locator("#rows .row-item").nth(1).locator("[data-open]").click();
+  await page.locator('[data-section="carry"] > summary').click();
+  await page.locator("[data-copy-style]").click();
+  await page.locator("#rows .row-item").nth(2).locator("[data-open]").click();
+  const posBefore = await page.evaluate(() => import("./js/store.js").then(async (m) => (await import("./js/render.js")).styleOf(m.row(), m.project().speakers).pos));
+  await page.locator("[data-paste-style]").click();
+  const look = await page.evaluate(() =>
+    import("./js/store.js").then(async (m) => {
+      const s = (await import("./js/render.js")).styleOf(m.row(), m.project().speakers);
+      return { color: s.color, font: s.font, pos: s.pos, speaker: m.row().speaker };
+    }),
+  );
+  assert(look.speaker === "B", "貼り付け先の話者が変わりました");
+  assert(look.color === "#ffffff" && look.font === "Noto Sans JP", `色・フォントがコピーされていません（${look.color} / ${look.font}）`);
+  assert(look.pos.x === posBefore.x && look.pos.y === posBefore.y, "貼り付け先の位置が変わりました");
+});
+
+test("22: 文字を選んだまま次を追加しても「選んだ文字」のまま固まらず、フォントを変えられる", async ({ page }) => {
+  await page.locator("#editor").fill("重要な一文");
+  await page.waitForTimeout(1100);
+  await selectText(page, 0, 5);
+  assert((await page.locator("[data-scope=chars]").getAttribute("aria-pressed")) === "true", "選んだ文字になっていません");
+  await page.locator("#addAfter").click();
+  assert((await page.locator("[data-scope=chars]").getAttribute("aria-pressed")) === "false", "追加後も「選んだ文字」のままです");
+  await page.locator('#styleForm [data-font="M PLUS Rounded 1c"]').click();
+  const font = await page.evaluate(() => import("./js/store.js").then((m) => m.project().speakers[m.row().speaker].font));
+  assert(font === "M PLUS Rounded 1c", "追加後にフォントを変更できません");
+});
+
+test("23: 入力欄で上限を超えた分は保存も表示もされない（食い違わない）", async ({ page }) => {
+  await page.locator("#editor").fill("い".repeat(2000));
+  await page.waitForTimeout(300);
+  await page.locator("#editor").press("End");
+  await page.keyboard.type("う");
+  const shown = await page.locator("#editor").inputValue();
+  const saved = await page.evaluate(() => import("./js/store.js").then((m) => m.row().text));
+  assert(shown === saved && saved.length === 2000, `表示${shown.length}文字・保存${saved.length}文字で食い違っています`);
+});
+
 (async () => {
   const server = await serve();
   const base = `http://127.0.0.1:${server.address().port}/`;
@@ -371,6 +448,27 @@ test("19: PCのフォントを一覧から選ぶと、追加されてすぐ使�
       console.log("FAIL", t.name, "\n  ", e.message);
     } finally {
       await app.context.close();
+    }
+  }
+  // Phone layout (390 x 844): the editor starts on the first screen and the preview stays visible.
+  if (!filter || filter.test("24: スマホ")) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await context.route("**/*", (route) => (route.request().url().startsWith(base) ? route.continue() : route.abort()));
+    const page = await context.newPage();
+    try {
+      await page.goto(base);
+      await page.waitForSelector("#rows .row-item");
+      const editorTop = await page.locator("#editor").evaluate((el) => el.getBoundingClientRect().top + scrollY);
+      assert(editorTop < 844, `入力欄が${Math.round(editorTop)}pxの位置にあります`);
+      await page.locator("#styleForm").scrollIntoViewIfNeeded();
+      const stageTop = await page.locator("#device").evaluate((el) => el.getBoundingClientRect().top);
+      assert(stageTop >= 0 && stageTop < 200, "デザインまで下げるとプレビューが見えなくなります");
+      console.log("PASS 24: スマホでは入力欄が最初の画面に入り、プレビューが上に残る");
+    } catch (e) {
+      failed++;
+      console.log("FAIL 24: スマホ", "\n  ", e.message);
+    } finally {
+      await context.close();
     }
   }
   await browser.close();

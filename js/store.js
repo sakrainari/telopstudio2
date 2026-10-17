@@ -22,6 +22,7 @@ export const ui = {
   range: null, // { start, end } in visible characters of the selected caption
   checked: new Set(),
   storageError: false,
+  oversize: 0,
 };
 
 // ---------- notifications ----------
@@ -46,6 +47,16 @@ export const project = () =>
 export const row = () => project().rows.find((r) => r.id === project().selected) || null;
 export const rowIndex = () => project().rows.indexOf(row());
 export const speakerOf = () => row()?.speaker || "A";
+
+// One rule for "how many characters" everywhere: visible characters (an emoji counts as one).
+export const charCount = (text) => graphemes(text).length;
+
+// Leave "selected characters" mode whenever the selection can no longer be valid
+// (switching, adding, splitting, joining, deleting, undoing).
+export function clearSelection() {
+  ui.range = null;
+  if (ui.scope === "chars") ui.scope = ui.scopeBeforeChars;
+}
 
 function makeProject(name, rows) {
   return { id: uid(), name, speakers: defaultSpeakers(), rows, selected: rows[0]?.id || null };
@@ -91,7 +102,9 @@ export function initStore() {
     const text = localStorage.getItem(STORAGE_KEY);
     if (text) {
       loaded = readLibrary(JSON.parse(text));
+      ui.oversize = loaded.oversize;
       delete loaded.legacy;
+      delete loaded.oversize;
     }
   } catch {
     ui.storageError = true; // never overwrite data we could not read
@@ -148,8 +161,7 @@ export function restore(index) {
   h.key = null;
   const data = clone(h.items[index].data);
   library.projects[library.projects.findIndex((p) => p.id === data.id)] = data;
-  ui.range = null;
-  if (ui.scope === "chars") ui.scope = ui.scopeBeforeChars;
+  clearSelection();
   for (const id of [...ui.checked]) if (!data.rows.some((r) => r.id === id)) ui.checked.delete(id);
   saveSoon();
   emit("all");
@@ -161,8 +173,7 @@ export const redo = () => restore(history().cursor + 1);
 export function select(id) {
   if (!project().rows.some((r) => r.id === id) || project().selected === id) return;
   project().selected = id;
-  ui.range = null;
-  if (ui.scope === "chars") ui.scope = ui.scopeBeforeChars;
+  clearSelection();
   breakHistoryMerge();
   saveSoon();
   emit("all");
@@ -171,9 +182,8 @@ export function select(id) {
 export function switchProject(id) {
   if (!library.projects.some((p) => p.id === id)) return;
   library.active = id;
-  ui.range = null;
+  clearSelection();
   ui.checked.clear();
-  if (ui.scope === "chars") ui.scope = ui.scopeBeforeChars;
   saveSoon();
   emit("all");
 }
@@ -198,9 +208,13 @@ export function exportProjectJSON() {
   return JSON.stringify({ app: "telopstudio2", version: 3, projects: [project()], sets: library.sets }, null, 2);
 }
 
+// Captions over the limit are kept as they are (never cut, never block the rest of the data);
+// only absurd sizes that cannot come from this app are rejected.
+let oversize = 0;
 function readRow(r, speakers, legacy) {
   if (!r || typeof r.text !== "string") throw Error("テロップの形式が正しくありません。");
-  if (r.text.length > LIMITS.chars) throw Error(`テロップは1枚${LIMITS.chars}文字までです。`);
+  if (r.text.length > LIMITS.chars * 20) throw Error("テロップの文字数が大きすぎるデータです。");
+  if (charCount(r.text) > LIMITS.chars) oversize++;
   const speaker = Object.hasOwn(SPEAKERS, legacy ? r.role : r.speaker) ? (legacy ? r.role : r.speaker) : "A";
   const override = cleanStylePatch(legacy ? legacyStyle(r.override) : r.override);
   const chars = graphemes(r.text);
@@ -263,6 +277,7 @@ function readSpeakers(input, legacy) {
 }
 
 export function readLibrary(data) {
+  oversize = 0;
   const legacy = data?.app !== "telopstudio2" && [1, 2].includes(data?.version);
   if (!data || (!legacy && data.version !== 3) || !Array.isArray(data.projects))
     throw Error("Telop Studio のプロジェクトJSONではありません。");
@@ -283,7 +298,7 @@ export function readLibrary(data) {
       }))
     : [];
   const activeIndex = Math.max(0, data.projects.findIndex((p) => p.id === data.active));
-  return { projects, sets, active: projects[activeIndex]?.id || null, legacy };
+  return { projects, sets, active: projects[activeIndex]?.id || null, legacy, oversize };
 }
 
 export function importLibrary(data) {
