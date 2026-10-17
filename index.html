@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#262624" media="(prefers-color-scheme: dark)">
-<title>Telop Studio 2 Ver2.3.0</title>
+<title>Telop Studio 2 Ver2.4.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@900&family=M+PLUS+Rounded+1c:wght@800&family=Dela+Gothic+One&family=RocknRoll+One&family=Zen+Maru+Gothic:wght@900&family=Shippori+Mincho+B1:wght@800&display=swap" rel="stylesheet">
@@ -164,6 +164,16 @@
     <p class="hint">空行で次のテロップに分かれます。行の頭に「A:」「B:」「N:」「※」「!」を付けると話者が決まります。</p>
     <textarea id="scriptText" rows="12"></textarea>
     <div class="row-buttons end"><button value="close">やめる</button><button type="button" id="scriptAdd" class="primary">テロップに追加</button></div>
+  </form>
+</dialog>
+
+<dialog id="localFontDialog" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head"><h2>PCのフォントから選ぶ</h2><button value="close" aria-label="閉じる">×</button></div>
+    <input type="search" id="localFontSearch" placeholder="名前で絞り込み（例：ゴシック、Mincho、源）" autocomplete="off" aria-label="フォント名で絞り込み">
+    <p id="localFontCount" class="hint"></p>
+    <div id="localFontList" class="local-font-list"></div>
+    <p class="hint">選んだフォントはすぐ今の編集対象に使われ、一覧に追加されます。続けて選べます。</p>
   </form>
 </dialog>
 

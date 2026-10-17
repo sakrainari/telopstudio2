@@ -330,6 +330,28 @@ test("18: ガイド判定は見た目の文字で行い、全角記号の余白�
   assert(info.includes("ガイドの外"), "はみ出しているのに警告が出ません");
 });
 
+test("19: PCのフォントを一覧から選ぶと、追加されてすぐ使われる", async ({ page }) => {
+  // The real list needs a permission prompt; stand in for it with fonts this machine has.
+  await page.evaluate(() => {
+    window.queryLocalFonts = async () =>
+      ["Liberation Serif", "DejaVu Sans", "Liberation Sans", "DejaVu Sans"].map((family) => ({ family }));
+  });
+  await page.locator('[data-section="font"] details summary').first().click();
+  await page.locator("[data-font-pick]").click();
+  assert(await page.locator("#localFontDialog").isVisible(), "一覧が開きません");
+  assert((await page.locator("#localFontList [data-local-font]").count()) === 3, "重複を除いた3書体が並んでいません");
+  await page.locator("#localFontSearch").fill("dejavu");
+  assert((await page.locator("#localFontList [data-local-font]").count()) === 1, "名前で絞り込めません");
+  await page.locator('[data-local-font="DejaVu Sans"]').click();
+  await page.waitForFunction(() => document.getElementById("toast").textContent.includes("DejaVu Sans"));
+  const p = await project(page);
+  const speaker = p.rows.find((r) => r.id === p.selected).speaker;
+  assert(p.speakers[speaker].font === "DejaVu Sans", `選んだフォントが使われていません（${p.speakers[speaker].font} / ${await page.locator("#toast").textContent()}）`);
+  assert(await page.locator('[data-local-font="DejaVu Sans"]').isDisabled(), "追加済みになっていません");
+  await page.keyboard.press("Escape");
+  assert((await page.locator('#styleForm [data-font="DejaVu Sans"]').count()) === 1, "フォント一覧に追加されていません");
+});
+
 (async () => {
   const server = await serve();
   const base = `http://127.0.0.1:${server.address().port}/`;

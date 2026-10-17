@@ -3,7 +3,7 @@ import { SPEAKERS, SAMPLES, clone, uid, setPath, getPath, deletePath, sampleSpea
 import { project, row, ui, change, emit, on, library, saveSoon, LIMITS } from "../store.js";
 import { applyMark } from "../text.js";
 import { styleOf } from "../render.js";
-import { allFonts, addFontFile, addLocalFont, removeFont, weightOf } from "../fonts.js";
+import { allFonts, addFontFile, addLocalFont, removeFont, weightOf, canListLocalFonts, localFontFamilies } from "../fonts.js";
 import { $, escapeHTML, toast, askName } from "./common.js";
 import { fontsChanged } from "./fonts-ready.js";
 
@@ -130,8 +130,12 @@ function fontHTML() {
   return `<div class="font-list">${list}</div>
     <details><summary class="hint">＋ 自分のフォントを追加</summary>
       <div class="fields" style="padding:8px 0 0">
-        <button type="button" data-font-file>フォントファイルを選ぶ（.ttf .otf .woff .woff2）</button>
-        <div class="inline"><input type="text" data-font-name placeholder="PCのフォント名（例：メイリオ）" aria-label="PCのフォント名"><button type="button" data-font-add>追加</button></div>
+        <button type="button" data-font-pick class="primary">PCのフォントから選ぶ</button>
+        <button type="button" data-font-file>フォントファイルを読み込む</button>
+        <p class="hint">ファイルは .ttf .otf .woff .woff2 に対応しています。</p>
+        <details><summary class="hint">一覧が開かないときは名前で追加</summary>
+          <div class="inline" style="margin-top:6px"><input type="text" data-font-name placeholder="フォント名（例：メイリオ）" aria-label="PCのフォント名"><button type="button" data-font-add>追加</button></div>
+        </details>
         <p class="hint">追加したフォントはこのブラウザに保存されます。別のPCではもう一度追加してください。</p>
       </div>
     </details>`;
@@ -247,6 +251,7 @@ async function onClick(e) {
     emit("all");
     return;
   }
+  if (t.closest("[data-font-pick]")) return openLocalFonts();
   if (t.closest("[data-font-file]")) {
     $("fontFile").value = "";
     return $("fontFile").click();
@@ -308,6 +313,42 @@ async function onClick(e) {
   }
 }
 
+// ---------- choose from fonts installed on this PC ----------
+let localFamilies = [];
+
+function renderLocalFonts() {
+  const q = $("localFontSearch").value.trim().toLowerCase();
+  const added = new Set(allFonts().map((f) => f.family));
+  const sample = (row()?.text || "").replace(/\s+/g, "").slice(0, 10) || "テロップの見本 Aa123";
+  const list = localFamilies.filter((f) => f.toLowerCase().includes(q));
+  const shown = list.slice(0, 400);
+  $("localFontCount").textContent =
+    `${localFamilies.length}書体のうち${list.length}件` + (list.length > shown.length ? `（先頭${shown.length}件を表示。名前で絞り込めます）` : "");
+  $("localFontList").innerHTML =
+    shown
+      .map(
+        (f) => `<button type="button" class="local-font" data-local-font="${escapeHTML(f)}"${added.has(f) ? " disabled" : ""}>
+          <span class="sample" style="font-family:'${escapeHTML(f)}',sans-serif">${escapeHTML(sample)}</span>
+          <small>${escapeHTML(f)}${added.has(f) ? "（追加済み）" : ""}</small></button>`,
+      )
+      .join("") || '<p class="hint">見つかりません。別の名前で探してください。</p>';
+}
+
+async function openLocalFonts() {
+  if (!canListLocalFonts())
+    return toast("このブラウザではPCのフォント一覧を読めません（Chrome・Edgeで使えます）。「名前で追加」を使ってください。", true);
+  try {
+    localFamilies = await localFontFamilies();
+  } catch {
+    return toast("フォント一覧の読み取りが許可されませんでした。アドレスバーの鍵マークから「フォント」を許可するか、「名前で追加」を使ってください。", true);
+  }
+  if (!localFamilies.length) return toast("PCのフォントが見つかりませんでした。「名前で追加」を使ってください。", true);
+  $("localFontSearch").value = "";
+  renderLocalFonts();
+  $("localFontDialog").showModal();
+  $("localFontSearch").focus();
+}
+
 function onInput(e) {
   const el = e.target,
     path = el.dataset.path;
@@ -360,6 +401,22 @@ export function initStylePanel() {
     },
     true,
   );
+  $("localFontSearch").addEventListener("input", renderLocalFonts);
+  $("localFontList").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-local-font]");
+    if (!b) return;
+    try {
+      const family = await addLocalFont(b.dataset.localFont, { fromList: true });
+      fontsChanged();
+      // Use the new font right away for the current target, then keep the list open for more.
+      write("font", family, "フォントを変更");
+      emit("all");
+      renderLocalFonts();
+      toast(`「${family}」を追加して使いました。`);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
   $("fontFile").onchange = async () => {
     const added = [];
     for (const file of $("fontFile").files)

@@ -86,9 +86,23 @@ export async function addFontFile(file) {
   return family;
 }
 
-// A font installed on this PC, referenced by name only.
-export async function addLocalFont(name) {
+// Chrome and Edge can list installed fonts (the browser asks the user for permission once).
+export const canListLocalFonts = () => typeof window.queryLocalFonts === "function";
+
+export async function localFontFamilies() {
+  const fonts = await window.queryLocalFonts();
+  return [...new Set(fonts.map((f) => f.family))].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+// A font installed on this PC, referenced by name only. Names picked from the
+// browser's own list are known to exist, so the width probe is skipped for them.
+export async function addLocalFont(name, { fromList = false } = {}) {
   const family = cleanName(name);
+  if (fromList) {
+    userFonts.push({ family, source: "local" });
+    await store("readwrite", (s) => s.put({ family, source: "local" })).catch(() => {});
+    return family;
+  }
   const probe = document.createElement("canvas").getContext("2d");
   const width = (font) => {
     probe.font = `64px ${font}`;
