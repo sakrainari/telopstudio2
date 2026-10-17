@@ -59,7 +59,11 @@ export function layout(row, speakers) {
     const items = chars.map((t) => {
       const size = t.style.size * fit;
       measureContext.font = fontString(t.style.font, size);
-      return { ...t, size, width: t.char === "\n" ? 0 : measureContext.measureText(t.char).width };
+      if (t.char === "\n") return { ...t, size, width: 0, ink: null };
+      const m = measureContext.measureText(t.char);
+      // Ink extents: the painted shape, without the empty side bearings of full-width punctuation.
+      const ink = { left: m.actualBoundingBoxLeft || 0, right: m.actualBoundingBoxRight ?? m.width, ascent: m.actualBoundingBoxAscent || 0, descent: m.actualBoundingBoxDescent || 0 };
+      return { ...t, size, width: m.width, ink };
     });
     lines = breakLines(items, style, fit, allowed);
     const tooMany = style.wrap.on && style.wrap.shrink && lines.length > style.wrap.maxLines;
@@ -94,7 +98,20 @@ export function layout(row, speakers) {
   const boxW = blockWidth + (style.box.on ? style.box.padX * 2 : 0);
   if (boxW > FRAME.width) warnings.push("横幅が画面からはみ出しています");
   if (fit < 1) warnings.push(`行数に合わせて${Math.round(fit * 100)}%に縮小`);
-  return { style, lines: placed, fit, blockWidth, blockHeight, lineCount: lines.length, warnings };
+  // Painted area of the glyphs (plus their outlines) relative to the block's top-left corner.
+  let ink = null;
+  for (const line of placed)
+    for (const g of line.glyphs) {
+      if (!g.ink || /\s/.test(g.char)) continue;
+      const reach = g.style.outlines.reduce((w, o) => w + (o.on ? o.width : 0), 0) * fit;
+      const x = line.left + g.x,
+        y = line.top + line.ascent;
+      const r = { left: x - g.ink.left - reach, right: x + g.ink.right + reach, top: y - g.ink.ascent - reach, bottom: y + g.ink.descent + reach };
+      ink = ink
+        ? { left: Math.min(ink.left, r.left), right: Math.max(ink.right, r.right), top: Math.min(ink.top, r.top), bottom: Math.max(ink.bottom, r.bottom) }
+        : r;
+    }
+  return { style, lines: placed, fit, blockWidth, blockHeight, lineCount: lines.length, warnings, ink };
 }
 
 function rgba(hex, alpha) {

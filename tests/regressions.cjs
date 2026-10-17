@@ -273,6 +273,63 @@ test("16: プレビューを拡大でき、拡大中もドラッグ位置が正�
   assert((await page.locator("#stage").evaluate((el) => el.clientHeight)) === fit, "全体表示に戻りません");
 });
 
+test("17: 実機プレビュー（Pixel 8 Pro）で、横幅合わせと画面埋めが正しく映る", async ({ page }) => {
+  await page.locator("#devicePreset").selectOption("pixel8pro");
+  const ratio = await page.locator("#device").evaluate((el) => el.clientWidth / el.clientHeight);
+  assert(Math.abs(ratio - 1344 / 2992) < 0.01, `画面の縦横比が${ratio.toFixed(3)}です`);
+  const fitWidth = await page.evaluate(() => [document.getElementById("stage").clientWidth, document.getElementById("device").clientWidth]);
+  assert(Math.abs(fitWidth[0] - fitWidth[1]) <= 1, "横幅合わせで動画が画面幅と一致しません");
+  await page.locator("#deviceFit").selectOption("fill");
+  const fill = await page.evaluate(() => {
+    const s = document.getElementById("stage"), d = document.getElementById("device");
+    return { visible: d.clientWidth / s.clientWidth, sameHeight: Math.abs(s.clientHeight - d.clientHeight) <= 1 };
+  });
+  assert(fill.sameHeight, "画面埋めで動画の高さが画面と一致しません");
+  assert(Math.abs(fill.visible - (1344 / 2992) / (9 / 16)) < 0.02, `見えている幅が${fill.visible.toFixed(3)}です`);
+  // A caption reaching the frame edges must warn that the sides are cut off on this phone.
+  await page.evaluate(async () => {
+    const store = await import("./js/store.js");
+    store.change("幅を広げる", (p) => {
+      const r = p.rows.find((x) => x.id === p.selected);
+      // About 980px wide: inside the 1080px frame, wider than the ~860px visible on this phone.
+      r.text = "ショート動画テロップ";
+      r.override = { size: 92, wrap: { on: false } };
+    });
+    store.emit("all");
+  });
+  await page.waitForFunction(() => document.getElementById("stageInfo").textContent.includes("左右が切れて"), null, { timeout: 5000 });
+  await page.reload();
+  await page.waitForSelector("#rows .row-item");
+  assert((await page.locator("#devicePreset").inputValue()) === "pixel8pro" && (await page.locator("#deviceFit").inputValue()) === "fill", "機種の選択が保存されていません");
+});
+
+test("18: ガイド判定は見た目の文字で行い、全角記号の余白や影では警告しない", async ({ page }) => {
+  // Place the caption so its painted right edge sits just inside / just outside the YouTube guide.
+  const place = (gap) =>
+    page.evaluate(async (gap) => {
+      const store = await import("./js/store.js");
+      const { layout } = await import("./js/render.js");
+      const p = store.project(),
+        r = p.rows.find((x) => x.id === p.selected);
+      const plan = layout(r, p.speakers);
+      const guideRight = 1080 * (1 - 0.15);
+      const centerX = guideRight - gap - plan.ink.right + plan.blockWidth / 2;
+      store.change("位置", (proj) => (proj.speakers[r.speaker].pos.x = (centerX / 1080) * 100));
+      store.emit("all");
+      return { sideBearing: plan.blockWidth - plan.ink.right };
+    }, gap);
+  await page.locator("#editor").fill("世界遺産クイズ！");
+  await page.waitForTimeout(400);
+  await place(6);
+  await page.waitForTimeout(500);
+  let info = await page.locator("#stageInfo").textContent();
+  assert(!info.includes("ガイドの外"), `内側なのに警告が出ています：${info}`);
+  await place(-12);
+  await page.waitForTimeout(500);
+  info = await page.locator("#stageInfo").textContent();
+  assert(info.includes("ガイドの外"), "はみ出しているのに警告が出ません");
+});
+
 (async () => {
   const server = await serve();
   const base = `http://127.0.0.1:${server.address().port}/`;

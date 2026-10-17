@@ -16,8 +16,18 @@ export const GUIDES = {
   tiktok: { top: 10, right: 16, bottom: 22, left: 4 },
   reels: { top: 10, right: 15, bottom: 21, left: 4 },
 };
+// Screen sizes in pixels (portrait). "video" shows the bare 1080x1920 frame.
+// notch: wide cut-out at the top; home: no cut-out (home-button phones).
+export const DEVICES = {
+  video: { name: "動画の枠（9:16）", w: 1080, h: 1920 },
+  pixel8pro: { name: "Pixel 8 Pro", w: 1344, h: 2992 },
+  pixel8: { name: "Pixel 8", w: 1080, h: 2400 },
+  iphone15: { name: "iPhone 15・16", w: 1179, h: 2556, notch: true },
+  galaxys24: { name: "Galaxy S24", w: 1080, h: 2340 },
+  iphonese: { name: "iPhone SE", w: 750, h: 1334, home: true },
+};
 const VIEW_KEY = "telopstudio2-view";
-const view = { bg: "checker", guide: "youtube" };
+const view = { bg: "checker", guide: "youtube", device: "video", fit: "width" };
 let drawJob = 0,
   current = null, // { canvas, centerX, centerY, plan }
   drag = null,
@@ -28,6 +38,8 @@ function loadView() {
     const saved = JSON.parse(localStorage.getItem(VIEW_KEY) || "{}");
     if (["checker", "dark", "light"].includes(saved.bg)) view.bg = saved.bg;
     if (["youtube", "tiktok", "reels", "off"].includes(saved.guide)) view.guide = saved.guide;
+    if (Object.hasOwn(DEVICES, saved.device)) view.device = saved.device;
+    if (["width", "fill"].includes(saved.fit)) view.fit = saved.fit;
   } catch {}
 }
 function saveView() {
@@ -54,7 +66,7 @@ function fitHeight() {
 // Keep the point under `focus` (client coordinates) in place while zooming; default is the caption.
 function setZoom(next, focus) {
   const area = $("stageArea"),
-    stage = $("stage");
+    stage = $("device");
   const value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(next * 100) / 100));
   const before = stage.getBoundingClientRect();
   let fx, fy;
@@ -103,9 +115,26 @@ function initZoom() {
   setZoom(1);
 }
 
+// Fraction of the video's width that is visible on screen (1 unless "fill" crops the sides).
+function visibleWidth() {
+  const d = DEVICES[view.device];
+  if (view.device === "video" || view.fit !== "fill") return 1;
+  return Math.min(1, (d.w / d.h) / (FRAME.width / FRAME.height));
+}
+
 function applyView() {
   const stage = $("stage");
   stage.className = `stage bg-${view.bg}`;
+  const d = DEVICES[view.device],
+    device = $("device");
+  device.style.setProperty("--screen", `${d.w} / ${d.h}`);
+  device.classList.toggle("phone", view.device !== "video");
+  device.classList.toggle("notch", Boolean(d.notch));
+  device.classList.toggle("home", Boolean(d.home));
+  device.classList.toggle("fill", view.fit === "fill" && view.device !== "video");
+  $("devicePreset").value = view.device;
+  $("deviceFit").value = view.fit;
+  $("deviceFit").hidden = view.device === "video";
   for (const b of document.querySelectorAll("[data-bg]")) b.setAttribute("aria-pressed", String(b.dataset.bg === view.bg));
   $("guidePreset").value = view.guide;
   const g = GUIDES[view.guide];
@@ -142,14 +171,24 @@ async function draw() {
   place();
 }
 
+// Visible area of the caption in frame pixels: painted glyphs and outlines, plus the box if any.
+// Shadows are soft and transparent side bearings are empty, so neither counts.
 function captionBounds(style, center) {
   const { plan } = current;
-  const padX = style.box.on ? style.box.padX : 0,
-    padY = style.box.on ? style.box.padY : 0;
-  const reach = style.outlines.reduce((w, o) => w + (o.on ? o.width : 0), 0) * plan.fit;
-  const halfW = plan.blockWidth / 2 + Math.max(padX, reach),
-    halfH = plan.blockHeight / 2 + Math.max(padY, reach);
-  return { left: center.x - halfW, right: center.x + halfW, top: center.y - halfH, bottom: center.y + halfH };
+  const originX = center.x - plan.blockWidth / 2,
+    originY = center.y - plan.blockHeight / 2;
+  let b = plan.ink
+    ? { left: originX + plan.ink.left, right: originX + plan.ink.right, top: originY + plan.ink.top, bottom: originY + plan.ink.bottom }
+    : { left: center.x, right: center.x, top: center.y, bottom: center.y };
+  if (style.box.on) {
+    b = {
+      left: Math.min(b.left, originX - style.box.padX),
+      right: Math.max(b.right, originX + plan.blockWidth + style.box.padX),
+      top: Math.min(b.top, originY - style.box.padY),
+      bottom: Math.max(b.bottom, originY + plan.blockHeight + style.box.padY),
+    };
+  }
+  return b;
 }
 
 function place(posOverride) {
@@ -174,6 +213,9 @@ function place(posOverride) {
   const off = b.left < 0 || b.top < 0 || b.right > FRAME.width || b.bottom > FRAME.height;
   canvas.classList.toggle("offscreen", off);
   if (off) notes.unshift("画面の外にはみ出しています");
+  const half = (FRAME.width * visibleWidth()) / 2;
+  if (!off && (b.left < FRAME.width / 2 - half || b.right > FRAME.width / 2 + half))
+    notes.unshift(`${DEVICES[view.device].name}では左右が切れて見えます`);
   const g = GUIDES[view.guide];
   if (g && !off) {
     const inside =
@@ -235,7 +277,7 @@ function initDrag() {
     const pos = styleOf(row(), project().speakers).pos;
     commitPosition({ x: Math.min(100, Math.max(0, pos.x + d[0])), y: Math.min(100, Math.max(0, pos.y + d[1])) }, "位置を微調整");
   });
-  new ResizeObserver(() => place()).observe($("stage"));
+  new ResizeObserver(() => place()).observe($("device"));
 }
 
 // ---------- editor ----------
@@ -389,6 +431,18 @@ export function initStage() {
       saveView();
       applyView();
     };
+  $("devicePreset").onchange = () => {
+    view.device = $("devicePreset").value;
+    saveView();
+    applyView();
+    setZoom(1);
+  };
+  $("deviceFit").onchange = () => {
+    view.fit = $("deviceFit").value;
+    saveView();
+    applyView();
+    setZoom(zoom);
+  };
   $("guidePreset").onchange = () => {
     view.guide = $("guidePreset").value;
     saveView();
