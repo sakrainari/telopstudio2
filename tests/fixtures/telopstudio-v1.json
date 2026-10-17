@@ -1,0 +1,486 @@
+{
+ "projects": [
+  {
+   "id": "54268f06-6409-4bdc-bb9a-01972e64ab3a",
+   "name": "はじめてのテロップ",
+   "roles": {
+    "A": {
+     "font": "Noto Sans JP",
+     "size": 88,
+     "letterSpacing": 0,
+     "lineGap": 24,
+     "color": "#ffffff",
+     "color2": "#ffcf59",
+     "gradient": false,
+     "fillOn": true,
+     "joinOutlines": false,
+     "lineJoin": "round",
+     "lineCap": "butt",
+     "miterLimit": 2,
+     "edges": [
+      {
+       "on": true,
+       "color": "#11131b",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#427cff",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#ff434f",
+       "width": 6,
+       "position": "outside"
+      }
+     ],
+     "shadow": {
+      "on": true,
+      "blur": 10,
+      "distance": 11.313708498984761,
+      "angle": 45,
+      "opacity": 1,
+      "color": "#000000"
+     },
+     "box": {
+      "on": false,
+      "color": "#000000",
+      "opacity": 0.65,
+      "radius": 18,
+      "padding": 22,
+      "border": 0,
+      "borderColor": "#111111",
+      "mode": "all",
+      "padTop": null,
+      "padRight": null,
+      "padBottom": null,
+      "padLeft": null,
+      "sizeMode": "auto",
+      "width": 1000,
+      "height": 300,
+      "alignX": "center",
+      "alignY": "center",
+      "offsetX": 0,
+      "offsetY": 0
+     },
+     "auto": {
+      "on": true,
+      "scale": 1.3,
+      "color": "#ffcf59"
+     },
+     "align": "center"
+    },
+    "B": {
+     "font": "RocknRoll One",
+     "size": 88,
+     "letterSpacing": 0,
+     "lineGap": 24,
+     "color": "#ffed6a",
+     "color2": "#ff902b",
+     "gradient": true,
+     "fillOn": true,
+     "joinOutlines": false,
+     "lineJoin": "round",
+     "lineCap": "butt",
+     "miterLimit": 2,
+     "edges": [
+      {
+       "on": true,
+       "color": "#11131b",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#e64343",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#ff434f",
+       "width": 6,
+       "position": "outside"
+      }
+     ],
+     "shadow": {
+      "on": true,
+      "blur": 10,
+      "distance": 11.313708498984761,
+      "angle": 45,
+      "opacity": 1,
+      "color": "#000000"
+     },
+     "box": {
+      "on": false,
+      "color": "#000000",
+      "opacity": 0.65,
+      "radius": 18,
+      "padding": 22,
+      "border": 0,
+      "borderColor": "#111111",
+      "mode": "all",
+      "padTop": null,
+      "padRight": null,
+      "padBottom": null,
+      "padLeft": null,
+      "sizeMode": "auto",
+      "width": 1000,
+      "height": 300,
+      "alignX": "center",
+      "alignY": "center",
+      "offsetX": 0,
+      "offsetY": 0
+     },
+     "auto": {
+      "on": true,
+      "scale": 1.3,
+      "color": "#ffcf59"
+     },
+     "align": "center"
+    },
+    "N": {
+     "font": "M PLUS Rounded 1c",
+     "size": 68,
+     "letterSpacing": 0,
+     "lineGap": 24,
+     "color": "#ffffff",
+     "color2": "#ffcf59",
+     "gradient": false,
+     "fillOn": true,
+     "joinOutlines": false,
+     "lineJoin": "round",
+     "lineCap": "butt",
+     "miterLimit": 2,
+     "edges": [
+      {
+       "on": true,
+       "color": "#10121a",
+       "width": 3,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#ffffff",
+       "width": 0,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#000000",
+       "width": 0,
+       "position": "outside"
+      }
+     ],
+     "shadow": {
+      "on": true,
+      "blur": 10,
+      "distance": 11.313708498984761,
+      "angle": 45,
+      "opacity": 1,
+      "color": "#000000"
+     },
+     "box": {
+      "on": true,
+      "color": "#000000",
+      "opacity": 0.65,
+      "radius": 18,
+      "padding": 22,
+      "border": 0,
+      "borderColor": "#111111",
+      "mode": "all",
+      "padTop": null,
+      "padRight": null,
+      "padBottom": null,
+      "padLeft": null,
+      "sizeMode": "auto",
+      "width": 1000,
+      "height": 300,
+      "alignX": "center",
+      "alignY": "center",
+      "offsetX": 0,
+      "offsetY": 0
+     },
+     "auto": {
+      "on": true,
+      "scale": 1.3,
+      "color": "#ffcf59"
+     },
+     "align": "center"
+    },
+    "※": {
+     "font": "Noto Sans JP",
+     "size": 44,
+     "letterSpacing": 0,
+     "lineGap": 24,
+     "color": "#17191f",
+     "color2": "#ffcf59",
+     "gradient": false,
+     "fillOn": true,
+     "joinOutlines": false,
+     "lineJoin": "round",
+     "lineCap": "butt",
+     "miterLimit": 2,
+     "edges": [
+      {
+       "on": false,
+       "color": "#11131b",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#427cff",
+       "width": 7,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#ff434f",
+       "width": 6,
+       "position": "outside"
+      }
+     ],
+     "shadow": {
+      "on": false,
+      "blur": 10,
+      "distance": 11.313708498984761,
+      "angle": 45,
+      "opacity": 1,
+      "color": "#000000"
+     },
+     "box": {
+      "on": true,
+      "color": "#ffffff",
+      "opacity": 1,
+      "radius": 18,
+      "padding": 22,
+      "border": 2,
+      "borderColor": "#111111",
+      "mode": "all",
+      "padTop": null,
+      "padRight": null,
+      "padBottom": null,
+      "padLeft": null,
+      "sizeMode": "auto",
+      "width": 1000,
+      "height": 300,
+      "alignX": "center",
+      "alignY": "center",
+      "offsetX": 0,
+      "offsetY": 0
+     },
+     "auto": {
+      "on": false,
+      "scale": 1.3,
+      "color": "#ffcf59"
+     },
+     "align": "center"
+    },
+    "!": {
+     "font": "Dela Gothic One",
+     "size": 112,
+     "letterSpacing": 0,
+     "lineGap": 24,
+     "color": "#fff5a1",
+     "color2": "#e7a322",
+     "gradient": true,
+     "fillOn": true,
+     "joinOutlines": false,
+     "lineJoin": "round",
+     "lineCap": "butt",
+     "miterLimit": 2,
+     "edges": [
+      {
+       "on": true,
+       "color": "#16151c",
+       "width": 6,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#ffffff",
+       "width": 5,
+       "position": "outside"
+      },
+      {
+       "on": false,
+       "color": "#df304b",
+       "width": 8,
+       "position": "outside"
+      }
+     ],
+     "shadow": {
+      "on": true,
+      "blur": 15,
+      "distance": 16.97056274847714,
+      "angle": 45,
+      "opacity": 1,
+      "color": "#000000"
+     },
+     "box": {
+      "on": false,
+      "color": "#000000",
+      "opacity": 0.65,
+      "radius": 18,
+      "padding": 22,
+      "border": 0,
+      "borderColor": "#111111",
+      "mode": "all",
+      "padTop": null,
+      "padRight": null,
+      "padBottom": null,
+      "padLeft": null,
+      "sizeMode": "auto",
+      "width": 1000,
+      "height": 300,
+      "alignX": "center",
+      "alignY": "center",
+      "offsetX": 0,
+      "offsetY": 0
+     },
+     "auto": {
+      "on": true,
+      "scale": 1.3,
+      "color": "#ffcf59"
+     },
+     "align": "center"
+    }
+   },
+   "rows": [
+    {
+     "id": "8bfea20f-6abb-4420-acc5-cba8de7e0143",
+     "role": "!",
+     "text": "👨‍👩‍👧 家族で100万円！",
+     "override": {},
+     "marks": [
+      {
+       "color": "#ff545f",
+       "gradient": false
+      },
+      {
+       "color": "#ff545f",
+       "gradient": false
+      },
+      {
+       "color": "#ff545f",
+       "gradient": false
+      },
+      {
+       "color": "#ff545f",
+       "gradient": false
+      },
+      {
+       "color": "#ff545f",
+       "gradient": false
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    {
+     "id": "4e1f7ada-41bc-4986-b486-574aed6e76dd",
+     "role": "A",
+     "text": "たった3つのヒントで\n場所がわかる？",
+     "override": {},
+     "marks": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    {
+     "id": "bb5a0de1-8817-4f0b-871d-6a7038465fbf",
+     "role": "B",
+     "text": "えっ、まさかの100万円！？",
+     "override": {},
+     "marks": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    {
+     "id": "0e2a48df-9ebf-4ce0-b92e-13bab845e428",
+     "role": "N",
+     "text": "『地形』に注目してみよう",
+     "override": {},
+     "marks": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    {
+     "id": "08429ce2-2971-497e-aaf4-f4cea7ce80bd",
+     "role": "※",
+     "text": "※ 答えは動画の最後に",
+     "override": {},
+     "marks": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+     ]
+    }
+   ],
+   "selected": "8bfea20f-6abb-4420-acc5-cba8de7e0143"
+  }
+ ],
+ "sets": [],
+ "active": "54268f06-6409-4bdc-bb9a-01972e64ab3a",
+ "version": 2
+}

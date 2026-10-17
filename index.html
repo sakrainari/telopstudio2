@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1a1f2b">
+<title>Telop Studio 2 Ver2.0.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Noto+Sans+JP:wght@900&family=M+PLUS+Rounded+1c:wght@800&family=Dela+Gothic+One&family=RocknRoll+One&family=Zen+Maru+Gothic:wght@900&family=Shippori+Mincho+B1:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script type="module" src="js/main.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">字</span><span>Telop Studio 2</span></div>
+  <div class="project">
+    <label class="sr" for="projectSelect">プロジェクト</label>
+    <select id="projectSelect"></select>
+    <details class="menu" id="projectMenu">
+      <summary aria-label="プロジェクトの操作">…</summary>
+      <div class="menu-body">
+        <button type="button" data-project="new">新しいプロジェクト</button>
+        <button type="button" data-project="rename">名前を変更</button>
+        <button type="button" data-project="import">JSONを読み込む</button>
+        <button type="button" data-project="export">JSONで保存</button>
+        <button type="button" data-project="delete" class="danger">このプロジェクトを削除</button>
+      </div>
+    </details>
+    <span id="saveState" class="save-state" role="status"></span>
+  </div>
+  <div class="bar-actions">
+    <button type="button" id="undo" title="元に戻す（Ctrl+Z）" aria-label="元に戻す">↶</button>
+    <button type="button" id="redo" title="やり直す（Ctrl+Shift+Z）" aria-label="やり直す">↷</button>
+    <a class="link" href="https://github.com/sakrainari/telopstudio2#使い方" target="_blank" rel="noopener">使い方</a>
+    <button type="button" id="exportOpen" class="primary">書き出し</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="pane list-pane" aria-label="テロップ一覧">
+    <div class="pane-head">
+      <h2>テロップ <span id="rowCount" class="count"></span></h2>
+      <label class="check"><input type="checkbox" id="checkAll">すべて選択</label>
+    </div>
+    <div class="list-actions">
+      <button type="button" id="addRow">＋ 追加</button>
+      <button type="button" id="scriptOpen">台本から追加</button>
+    </div>
+    <ol id="rows" class="rows"></ol>
+  </aside>
+
+  <section class="pane stage-pane" aria-label="編集">
+    <div class="stage-tools">
+      <div class="segmented" role="group" aria-label="背景">
+        <button type="button" data-bg="checker" aria-pressed="true">透過</button>
+        <button type="button" data-bg="dark" aria-pressed="false">暗い</button>
+        <button type="button" data-bg="light" aria-pressed="false">明るい</button>
+      </div>
+      <label class="tool">ガイド
+        <select id="guidePreset">
+          <option value="youtube">YouTubeショート</option>
+          <option value="tiktok">TikTok</option>
+          <option value="reels">リール</option>
+          <option value="off">表示しない</option>
+        </select>
+      </label>
+      <button type="button" id="referenceOpen">実画面を重ねる</button>
+      <input type="file" id="referenceFile" accept="image/png,image/jpeg,image/webp" hidden>
+    </div>
+    <div class="stage-area">
+      <div id="stage" class="stage bg-checker" aria-label="1080×1920 プレビュー。文字をドラッグして位置を変更できます">
+        <img id="referenceImage" class="reference" alt="" hidden>
+        <div id="guide" class="guide"><span>ボタン・説明文を避ける目安</span></div>
+        <div id="wrapGuide" class="wrap-guide" hidden></div>
+        <canvas id="caption" class="caption" tabindex="0" aria-label="テロップ（矢印キーでも移動）"></canvas>
+      </div>
+    </div>
+    <p id="stageInfo" class="stage-info" aria-live="polite"></p>
+
+    <div class="editor">
+      <div class="editor-head">
+        <label for="speaker">話者</label>
+        <select id="speaker"></select>
+        <span id="cutLabel" class="cut-label"></span>
+        <span id="selectionLabel" class="selection-label"></span>
+      </div>
+      <textarea id="editor" rows="3" maxlength="2000" placeholder="ここにテロップの文字を入力"></textarea>
+      <div class="quick" id="quick" aria-label="選んだ文字をすぐ装飾">
+        <button type="button" data-quick="important" class="q-important">重要</button>
+        <button type="button" data-quick="red"><i class="sw" style="--c:#ff4d5e"></i>赤</button>
+        <button type="button" data-quick="yellow"><i class="sw" style="--c:#ffd23f"></i>黄</button>
+        <button type="button" data-quick="blue"><i class="sw" style="--c:#59a6ff"></i>青</button>
+        <button type="button" data-quick="bigger">大きく</button>
+        <button type="button" data-quick="smaller">小さく</button>
+        <button type="button" data-quick="plain">強調なし</button>
+        <button type="button" data-quick="clear">装飾を消す</button>
+      </div>
+      <div class="editor-nav">
+        <button type="button" id="prevRow" title="Alt+↑">← 前へ</button>
+        <button type="button" id="nextRow" title="Alt+↓">次へ →</button>
+        <button type="button" id="addAfter" title="Ctrl+Enter">＋ 同じ話者で次を追加</button>
+        <button type="button" id="splitRow">カーソル位置で分ける</button>
+        <button type="button" id="mergeRow">次とつなげる</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="pane style-pane" aria-label="デザイン">
+    <div class="scope" role="group" aria-label="変更する範囲">
+      <button type="button" data-scope="speaker">話者全体</button>
+      <button type="button" data-scope="row">このテロップ</button>
+      <button type="button" data-scope="chars">選んだ文字</button>
+    </div>
+    <p id="scopeHint" class="hint"></p>
+    <form id="styleForm" onsubmit="return false"></form>
+  </aside>
+</main>
+
+<dialog id="exportDialog" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head"><h2>書き出し</h2><button value="close" aria-label="閉じる">×</button></div>
+    <fieldset class="radios">
+      <legend>画像の形</legend>
+      <label><input type="radio" name="exportMode" value="frame" checked><span><b>1080×1920 位置込み</b><small>編集ソフトに置くだけで位置が合います</small></span></label>
+      <label><input type="radio" name="exportMode" value="crop"><span><b>テロップだけ</b><small>文字の周りで切り抜いた透過PNG</small></span></label>
+    </fieldset>
+    <div class="export-group">
+      <h3>このテロップ</h3>
+      <div class="row-buttons"><button type="button" id="copyPng" class="primary">画像をコピー</button><button type="button" id="savePng">PNGで保存</button></div>
+    </div>
+    <div class="export-group">
+      <h3>まとめて</h3>
+      <div class="row-buttons"><button type="button" id="zipChecked">チェックしたテロップをZIP</button><button type="button" id="zipAll">すべてZIP</button></div>
+      <p id="zipProgress" class="hint" aria-live="polite"></p>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="scriptDialog" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head"><h2>台本から追加</h2><button value="close" aria-label="閉じる">×</button></div>
+    <p class="hint">空行で次のテロップに分かれます。行の頭に「A:」「B:」「N:」「※」「!」を付けると話者が決まります。</p>
+    <textarea id="scriptText" rows="12"></textarea>
+    <div class="row-buttons end"><button value="close">やめる</button><button type="button" id="scriptAdd" class="primary">テロップに追加</button></div>
+  </form>
+</dialog>
+
+<dialog id="nameDialog" class="sheet small">
+  <form method="dialog">
+    <h2 id="nameTitle">名前</h2>
+    <input id="nameInput" maxlength="80" required autocomplete="off">
+    <div class="row-buttons end"><button value="cancel" formnovalidate>やめる</button><button value="ok" class="primary">決定</button></div>
+  </form>
+</dialog>
+
+<input type="file" id="jsonFile" accept=".json,application/json" hidden>
+<input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript>JavaScriptを有効にしてください。</noscript>
+</body>
+</html>
