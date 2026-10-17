@@ -2,6 +2,8 @@
 
 9:16のショート動画用に、透過PNGのテロップを作るWebアプリです。台本を貼り付けると話者ごとにデザインがそろい、強調したい文字だけを装飾して、1080×1920の位置込みPNGでまとめて書き出せます。
 
+アプリ：https://sakrainari.github.io/telopstudio2/
+
 ビルドもインストールも不要です。HTML / CSS / JavaScript（ES Modules）だけで動きます。
 
 [Telop Studio](https://github.com/sakrainari/telopstudio)（初代）を、ショート専用として一から組み直した版です。
